@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
+import { read, utils } from "xlsx";
 
 import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
@@ -13,22 +13,14 @@ export default function Home() {
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]; // Get the selected file
 
-        if (file) {
-            const res = XLSX.read(file);
-            console.log("res", res);
-        }
-        //     xlsx.readFile(file); // Read the file
-        //     if (files) {
-        //         console.log("files", files);
-        //     }
-        //     if (files) {
-        //         Papa.parse(files?.[0], {
-        //             complete: function (results) {
-        //                 console.log("Parsed CSV:", results); // Display parsed data
-        //             },
-        //             header: true, // If CSV has headers
-        //         });
-        //     }
+        file?.arrayBuffer().then((buffer) => {
+            const wb = read(buffer, { type: "buffer" });
+            const wsname = wb.SheetNames[0];
+            const ws = wb.Sheets[wsname];
+            const data = utils.sheet_to_json(ws);
+
+            console.log("data", data);
+        });
     };
 
     const clearFileInput = () => {
