@@ -7,6 +7,18 @@ import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
 const inter = Inter({ subsets: ["latin"] });
 
+class Tuple {
+    x: string;
+    y: string;
+
+    constructor(x: string, y: string) {
+        this.x = x;
+        this.y = y;
+    }
+
+    toString = () => "[" + this.x + "," + this.y + "]";
+}
+
 export default function Home() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -15,11 +27,59 @@ export default function Home() {
 
         file?.arrayBuffer().then((buffer) => {
             const wb = read(buffer, { type: "buffer" });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const data = utils.sheet_to_json(ws);
 
-            console.log("data", data);
+            const colleagueAssemble = new Map<string, number>();
+
+            wb.SheetNames.forEach((sheetName) => {
+                const ws = wb.Sheets[sheetName];
+                const data: { [key: string]: string }[] =
+                    utils.sheet_to_json(ws);
+
+                const groupingData: {
+                    [key: string]: string[];
+                } = {};
+
+                data.forEach((row: { [key: string]: string }) => {
+                    Object.keys(row).forEach((key) => {
+                        if (groupingData[key] === undefined)
+                            groupingData[key] = [];
+                        groupingData[key].push(row[key]);
+                    });
+                });
+
+                const keys = Object.keys(groupingData);
+
+                keys.forEach((key) => {
+                    const values = groupingData[key];
+                    for (let i = 0; i < values.length; i++) {
+                        for (let j = i + 1; j < values.length; j++) {
+                            let pair =
+                                values[i].localeCompare(values[j]) > 0
+                                    ? new Tuple(values[i], values[j])
+                                    : new Tuple(values[j], values[i]);
+
+                            if (colleagueAssemble.has(pair.toString())) {
+                                colleagueAssemble.set(
+                                    pair.toString(),
+                                    colleagueAssemble.get(pair.toString())! + 1
+                                );
+                            } else {
+                                colleagueAssemble.set(pair.toString(), 1);
+                            }
+                        }
+                    }
+                });
+            });
+
+            const colleagueAssembleArray = Array.from(colleagueAssemble);
+            colleagueAssembleArray.sort((a, b) => {
+                return b[1] - a[1];
+            });
+
+            console.log(
+                "colleagueAssembleArray",
+                JSON.stringify(colleagueAssembleArray)
+            );
         });
     };
 
