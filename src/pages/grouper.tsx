@@ -31,91 +31,56 @@ class Tuple {
 export default function Home() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
         const file = event.target.files?.[0]; // Get the selected file
 
-        file?.arrayBuffer().then((buffer) => {
-            const wb = read(buffer, { type: "buffer" });
+        const buffer = await file?.arrayBuffer();
+        const wb = read(buffer, { type: "buffer" });
 
-            const colleagueAssemble = new Map<string, number>();
+        let targetCount = 0;
 
-            wb.SheetNames.map((sheetName) => {
-                const ws = wb.Sheets[sheetName];
-                const data: {
-                    group?: string;
-                    id: string;
-                    name: string;
-                    gender: string;
-                }[] = utils.sheet_to_json(ws);
+        wb.SheetNames.map((sheetName) => {
+            const ws = wb.Sheets[sheetName];
+            const data: {
+                group?: string;
+                id: string;
+                name: string;
+                gender: string;
+            }[] = utils.sheet_to_json(ws);
 
-                let newData = data;
+            let newData = data;
 
-                if (data[0].group !== undefined) {
-                    let currentGroup = data[0].group;
+            if (data[0].group !== undefined) {
+                let currentGroup = data[0].group;
 
-                    newData = data.map((row) => {
-                        const ret = { ...row };
-                        if (row.group) {
-                            currentGroup = row.group;
-                        } else {
-                            ret.group = currentGroup;
-                        }
-                        return ret;
-                    });
-                } else if (sheetName !== "target") {
-                    alert("그룹이 없는 sheet가 존재합니다.");
-                    console.log("그룹이 없습니다.", data);
-                    return;
-                }
+                newData = data.map((row) => {
+                    const ret = { ...row };
+                    if (row.group) {
+                        currentGroup = row.group;
+                    } else {
+                        ret.group = currentGroup;
+                    }
+                    return ret;
+                });
+            } else if (sheetName !== "target") {
+                alert("그룹이 없는 sheet가 존재합니다.");
+                console.log("그룹이 없습니다.", data);
+                return;
+            }
 
-                console.log("data", newData);
+            if (sheetName === "target") {
+                targetCount++;
+            }
 
-                // const groupingData: {
-                //     [key: string]: string[];
-                // } = {};
-
-                // data.forEach((row: { [key: string]: string }) => {
-                //     Object.keys(row).forEach((key) => {
-                //         if (groupingData[key] === undefined)
-                //             groupingData[key] = [];
-                //         groupingData[key].push(row[key]);
-                //     });
-                // });
-
-                // const keys = Object.keys(groupingData);
-
-                // keys.forEach((key) => {
-                //     const values = groupingData[key];
-                //     for (let i = 0; i < values.length; i++) {
-                //         for (let j = i + 1; j < values.length; j++) {
-                //             let pair =
-                //                 values[i].localeCompare(values[j]) > 0
-                //                     ? new Tuple(values[i], values[j])
-                //                     : new Tuple(values[j], values[i]);
-
-                //             if (colleagueAssemble.has(pair.toString())) {
-                //                 colleagueAssemble.set(
-                //                     pair.toString(),
-                //                     colleagueAssemble.get(pair.toString())! + 1
-                //                 );
-                //             } else {
-                //                 colleagueAssemble.set(pair.toString(), 1);
-                //             }
-                //         }
-                //     }
-                // });
-            });
-
-            const colleagueAssembleArray = Array.from(colleagueAssemble);
-            colleagueAssembleArray.sort((a, b) => {
-                return b[1] - a[1];
-            });
-
-            console.log(
-                "colleagueAssembleArray",
-                JSON.stringify(colleagueAssembleArray)
-            );
+            console.log("data", newData);
         });
+
+        if (targetCount !== 1) {
+            alert("target sheet가 없거나 여러개입니다.");
+            return;
+        }
     };
 
     const clearFileInput = () => {
