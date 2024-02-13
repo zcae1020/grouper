@@ -5,6 +5,7 @@ import { read, utils } from "xlsx";
 
 import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
+import axios from "axios";
 
 /**
  * @see
@@ -15,6 +16,8 @@ import { Button, Input } from "@mui/material";
  */
 
 const inter = Inter({ subsets: ["latin"] });
+
+const TARGET_SHEET_NAME = "target";
 
 class Tuple {
     x: string;
@@ -40,8 +43,11 @@ export default function Home() {
         const wb = read(buffer, { type: "buffer" });
 
         let targetCount = 0;
+        let isSheetNameValid = true;
 
-        wb.SheetNames.map((sheetName) => {
+        let targetData: { id: string; name: string; gender: string }[] = [];
+
+        const sheetData = wb.SheetNames.map((sheetName) => {
             const ws = wb.Sheets[sheetName];
             const data: {
                 group?: string;
@@ -64,23 +70,42 @@ export default function Home() {
                     }
                     return ret;
                 });
-            } else if (sheetName !== "target") {
-                alert("그룹이 없는 sheet가 존재합니다.");
-                console.log("그룹이 없습니다.", data);
+            } else if (sheetName !== TARGET_SHEET_NAME) {
+                isSheetNameValid = false;
                 return;
             }
 
-            if (sheetName === "target") {
+            if (sheetName === TARGET_SHEET_NAME) {
                 targetCount++;
+                targetData = newData;
+                return;
             }
 
-            console.log("data", newData);
+            return {
+                sheetName,
+                data: newData,
+            };
         });
 
         if (targetCount !== 1) {
-            alert("target sheet가 없거나 여러개입니다.");
+            alert(
+                `"${TARGET_SHEET_NAME}"이라는 이름의 sheet가 없거나 여러개입니다.`
+            );
             return;
         }
+
+        if (!isSheetNameValid) {
+            alert(
+                "그룹 필드가 없는 sheet가 존재합니다. 양식과 맞는지 확인해주세요."
+            );
+            return;
+        }
+
+        const { data: hello } = await axios.get("/api/hello");
+
+        console.log("hello", hello);
+
+        console.log("sheetData", sheetData, targetData);
     };
 
     const clearFileInput = () => {

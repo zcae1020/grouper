@@ -13,6 +13,7 @@
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.14.20",
     "@types/papaparse": "^5.3.14",
+    "axios": "^1.6.7",
     "next": "14.0.3",
     "papaparse": "^5.4.1",
     "react": "^18",
