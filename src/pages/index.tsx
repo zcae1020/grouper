@@ -1,6 +1,5 @@
 import React, { useRef } from "react";
 
-import Papa from "papaparse";
 import { read, utils } from "xlsx";
 
 import { Inter } from "next/font/google";
