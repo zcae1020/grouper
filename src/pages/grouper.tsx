@@ -2,8 +2,7 @@ import React, { useRef } from "react";
 
 import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
-import axios from "axios";
-import { extractFileData } from "@/utils/grouper";
+import { divideIntoGroups, extractFileData } from "@/utils/grouper";
 
 /**
  * @see
@@ -26,16 +25,14 @@ export default function Home() {
         const data = await extractFileData(file);
 
         console.log("data", data);
-    };
 
-    const handleApi = async () => {
-        const { data: hello } = await axios.get("/api/hello", {
-            params: {
-                name: "hello",
-            },
-        });
+        const groupCaseList = divideIntoGroups(
+            data.targetData.map((target) => target.id),
+            8,
+            40
+        );
 
-        console.log("hello", hello);
+        console.log("groupCaseList", groupCaseList);
     };
 
     const clearFileInput = () => {
@@ -55,7 +52,6 @@ export default function Home() {
                 // accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
             />
             <Button onClick={clearFileInput}>Clear</Button>
-            <Button onClick={handleApi}>Run</Button>
         </main>
     );
 }
