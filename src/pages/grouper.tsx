@@ -2,7 +2,12 @@ import React, { use, useRef, useState } from "react";
 
 import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
-import { extractFileData, getRandomGroupListCase } from "@/utils/grouper";
+import {
+    extractFileData,
+    getMatchCountByParticipation,
+    getPreviousParticipationCounts,
+    getRandomGroupListCase,
+} from "@/utils/grouper";
 
 import type { Human } from "@/utils/grouper";
 
@@ -55,19 +60,17 @@ export default function Home() {
 
         setExtractedData(extractedData);
 
-        const previousParticipationCounts: Record<Human["id"], number> = {};
-
-        extractedData.sheetData.forEach(({ data }) => {
-            data.forEach((row) => {
-                if (previousParticipationCounts[row.id]) {
-                    previousParticipationCounts[row.id]++;
-                } else {
-                    previousParticipationCounts[row.id] = 1;
-                }
-            });
+        const previousParticipationCounts = getPreviousParticipationCounts({
+            extractedData,
         });
 
         setPreviousParticipationCounts(previousParticipationCounts);
+
+        const matchCountByParticipation = getMatchCountByParticipation({
+            extractedData,
+        });
+
+        setMatchCountByParticipation(matchCountByParticipation);
     };
 
     const generateGroupListCase = () => {
