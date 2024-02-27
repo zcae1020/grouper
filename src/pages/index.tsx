@@ -2,9 +2,7 @@ import React, { useRef } from "react";
 
 import { read, utils } from "xlsx";
 
-import { Inter } from "next/font/google";
 import { Button, Input } from "@mui/material";
-const inter = Inter({ subsets: ["latin"] });
 
 class Tuple {
     x: string;
@@ -90,7 +88,7 @@ export default function Home() {
 
     return (
         <main
-            className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+            className={`flex min-h-screen flex-col items-center justify-between p-24`}
         >
             <Input
                 type="file"
