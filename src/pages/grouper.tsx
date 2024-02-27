@@ -1,6 +1,5 @@
-import React, { use, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 
-import { Inter } from "next/font/google";
 import { Button, CircularProgress, Input } from "@mui/material";
 
 import {
@@ -21,8 +20,6 @@ import type { Human } from "@/utils/grouper";
  * 3. 성별
  * 4. 모임 경력 균등하게 하기
  */
-
-const inter = Inter({ subsets: ["latin"] });
 
 const GROUP_COUNT = 5;
 
@@ -191,7 +188,7 @@ export default function Home() {
 
     return (
         <main
-            className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+            className={`flex min-h-screen flex-col items-center justify-between p-24`}
         >
             <Input
                 type="file"
