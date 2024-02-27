@@ -98,6 +98,9 @@ export const getPreviousParticipationCounts = ({
     return previousParticipationCounts;
 };
 
+/**
+ * index 0: 가장 최근
+ */
 export const getMatchCountByParticipation = ({
     extractedData,
     time = 3,
@@ -167,4 +170,57 @@ export const getRandomGroupListCase = ({
     return groupCount === 0
         ? [randomList]
         : [randomList, ...getRandomGroupListCase({ idList, groupCount })];
+};
+
+export const getScoreOfGroupListCase = ({
+    groupListCase,
+    matchCountByParticipation,
+    previousParticipationCounts,
+}: {
+    groupListCase: Human["id"][][];
+    matchCountByParticipation: Awaited<
+        ReturnType<typeof getMatchCountByParticipation>
+    >;
+    previousParticipationCounts: Awaited<
+        ReturnType<typeof getPreviousParticipationCounts>
+    >;
+}) => {
+    let matchScore = 0;
+    // 표준편차
+    let previousParticipationScorePerGroup = Array.from({
+        length: groupListCase.length,
+    }).map(() => 0);
+
+    groupListCase.forEach((group, index) => {
+        group.forEach((id, i) => {
+            group.forEach((id2, j) => {
+                if (i === j) {
+                    return;
+                }
+
+                matchScore += matchCountByParticipation.reduce(
+                    (acc, matchCount) => {
+                        return acc + (matchCount[id]?.[id2] ?? 0);
+                    },
+                    0
+                );
+            });
+
+            previousParticipationScorePerGroup[index] +=
+                previousParticipationCounts[id];
+        });
+    });
+
+    const previousParticipationScoreStandardDeviation = Math.sqrt(
+        previousParticipationScorePerGroup.reduce(
+            (acc, cur) => acc + Math.pow(cur, 2),
+            0
+        ) / previousParticipationScorePerGroup.length
+    );
+
+    return {
+        score: matchScore - previousParticipationScoreStandardDeviation,
+        matchScore,
+        previousParticipationScore: previousParticipationScoreStandardDeviation,
+    };
 };

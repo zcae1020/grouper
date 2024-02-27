@@ -1,13 +1,16 @@
 import React, { use, useRef, useState } from "react";
 
 import { Inter } from "next/font/google";
-import { Button, Input } from "@mui/material";
+import { Button, CircularProgress, Input } from "@mui/material";
+
 import {
     extractFileData,
     getMatchCountByParticipation,
     getPreviousParticipationCounts,
     getRandomGroupListCase,
+    getScoreOfGroupListCase,
 } from "@/utils/grouper";
+import GroupList from "@/components/GroupList";
 
 import type { Human } from "@/utils/grouper";
 
@@ -31,15 +34,35 @@ export default function Home() {
         ReturnType<typeof extractFileData>
     > | null>(null);
 
+    const [targetData, setTargetData] = useState<{
+        [key: Human["id"]]: Human;
+    } | null>(null);
+
     // 지난기간동안의 참여자별 참여 횟수
     const [previousParticipationCounts, setPreviousParticipationCounts] =
         useState<Record<Human["id"], number>>({});
 
     // 그룹 케이스 리스트
-    const [groupCaseList, setGroupCaseList] = useState<{
-        score: number;
-        groupListCase: ReturnType<typeof getRandomGroupListCase>;
-    } | null>(null);
+    const [groupCaseList, setGroupCaseList] = useState<
+        | {
+              scoreData: {
+                  score: number;
+                  matchScore: number;
+                  previousParticipationScore: number;
+              };
+              groupListCase: ReturnType<typeof getRandomGroupListCase>;
+          }[]
+        | null
+    >(null);
+
+    const [visibleGroupCaseListCount, setVisibleGroupCaseListCount] =
+        useState<number>(5);
+
+    const [visitedGroupCaseList, setVisitedGroupCaseList] = useState<
+        Record<string, boolean>
+    >({});
+
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     // 최근 3번의 그룹에서의 다른 참가자와의 매칭 횟수
     const [matchCountByParticipation, setMatchCountByParticipation] = useState<
@@ -59,6 +82,14 @@ export default function Home() {
         const extractedData = await extractFileData(file);
 
         setExtractedData(extractedData);
+        setTargetData(
+            extractedData.targetData.reduce<{
+                [key: Human["id"]]: Human;
+            }>((acc, cur) => {
+                acc[cur.id] = cur;
+                return acc;
+            }, {})
+        );
 
         const previousParticipationCounts = getPreviousParticipationCounts({
             extractedData,
@@ -78,6 +109,9 @@ export default function Home() {
             return;
         }
 
+        setIsLoading(true);
+
+        // TODO: 비동기로 수정
         const groupByGender = extractedData.targetData.reduce<{
             [key: string]: Human[];
         }>((acc, cur) => {
@@ -89,26 +123,64 @@ export default function Home() {
             return acc;
         }, {});
 
-        const randomGroupListCasePerGender = Object.values(groupByGender).map(
-            (group) =>
+        for (let i = 0; i < 100; i++) {
+            const randomGroupListCasePerGender = Object.values(
+                groupByGender
+            ).map((group) =>
                 getRandomGroupListCase({
                     idList: group.map((v) => v.id),
                     groupCount: GROUP_COUNT,
                 })
-        );
+            );
 
-        if (randomGroupListCasePerGender.length !== 2) {
-            throw new Error("성별이 2가지가 아닙니다.");
+            if (randomGroupListCasePerGender.length !== 2) {
+                throw new Error("성별이 2가지가 아닙니다.");
+            }
+
+            const groupListCase: Human["id"][][] = [];
+
+            Array.from({ length: GROUP_COUNT }).forEach((_, index) => {
+                groupListCase.push(
+                    [
+                        ...randomGroupListCasePerGender[0][index],
+                        ...randomGroupListCasePerGender[1][
+                            GROUP_COUNT - index - 1
+                        ],
+                    ].sort()
+                );
+            });
+
+            groupListCase.sort((a, b) =>
+                a.join(".").localeCompare(b.join("."))
+            );
+
+            const scoreData = getScoreOfGroupListCase({
+                groupListCase,
+                matchCountByParticipation,
+                previousParticipationCounts,
+            });
+
+            if (visitedGroupCaseList[JSON.stringify(groupListCase)]) {
+                continue;
+            }
+
+            setVisitedGroupCaseList((prev) => ({
+                ...prev,
+                [JSON.stringify(groupListCase)]: true,
+            }));
+
+            setGroupCaseList((prev) =>
+                [
+                    ...(prev ?? []),
+                    {
+                        scoreData,
+                        groupListCase,
+                    },
+                ].sort((a, b) => a.scoreData.score - b.scoreData.score)
+            );
         }
 
-        const groupSliceList: string[][] = [];
-
-        Array.from({ length: GROUP_COUNT }).forEach((_, index) => {
-            groupSliceList.push([
-                ...randomGroupListCasePerGender[0][index],
-                ...randomGroupListCasePerGender[1][GROUP_COUNT - index - 1],
-            ]);
-        });
+        setIsLoading(false);
     };
 
     const clearFileInput = () => {
@@ -127,8 +199,28 @@ export default function Home() {
                 onChange={handleFileChange}
                 // accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
             />
+            <div>
+                {isLoading ? (
+                    <CircularProgress />
+                ) : (
+                    <GroupList
+                        targetData={targetData ?? {}}
+                        groupCaseList={
+                            groupCaseList?.slice(
+                                0,
+                                visibleGroupCaseListCount
+                            ) ?? []
+                        }
+                    />
+                )}
+            </div>
             <Button onClick={clearFileInput}>Clear</Button>
             <Button onClick={generateGroupListCase}>Generate</Button>
+            <Button
+                onClick={() => setVisibleGroupCaseListCount((prev) => prev + 5)}
+            >
+                결과 더보기
+            </Button>
         </main>
     );
 }

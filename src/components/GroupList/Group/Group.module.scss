@@ -1,0 +1,14 @@
+.wrapper {
+    display: flex;
+    justify-content: space-between;
+}
+
+.groupListWrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.group {
+    border: 1px solid #ccc;
+}
