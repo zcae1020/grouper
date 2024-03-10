@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 
-import { Button, CircularProgress, Input } from "@mui/material";
+import { Button, CircularProgress, Input, InputLabel } from "@mui/material";
 
 import {
     extractFileData,
@@ -12,6 +12,7 @@ import {
 import GroupList from "@/components/GroupList";
 
 import type { Human } from "@/utils/grouper";
+import styled from "@emotion/styled";
 
 /**
  * @see
@@ -20,8 +21,6 @@ import type { Human } from "@/utils/grouper";
  * 3. 성별
  * 4. 모임 경력 균등하게 하기
  */
-
-const GROUP_COUNT = 5;
 
 export default function Home() {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,6 +50,9 @@ export default function Home() {
           }[]
         | null
     >(null);
+
+    // 케이스당 그룹 수
+    const [groupCount, setGroupCount] = useState<number>(5);
 
     const [visibleGroupCaseListCount, setVisibleGroupCaseListCount] =
         useState<number>(5);
@@ -126,7 +128,7 @@ export default function Home() {
             ).map((group) =>
                 getRandomGroupListCase({
                     idList: group.map((v) => v.id),
-                    groupCount: GROUP_COUNT,
+                    groupCount,
                 })
             );
 
@@ -136,12 +138,12 @@ export default function Home() {
 
             const groupListCase: Human["id"][][] = [];
 
-            Array.from({ length: GROUP_COUNT }).forEach((_, index) => {
+            Array.from({ length: groupCount }).forEach((_, index) => {
                 groupListCase.push(
                     [
                         ...randomGroupListCasePerGender[0][index],
                         ...randomGroupListCasePerGender[1][
-                            GROUP_COUNT - index - 1
+                            groupCount - index - 1
                         ],
                     ].sort()
                 );
@@ -188,14 +190,36 @@ export default function Home() {
 
     return (
         <main
-            className={`flex min-h-screen flex-col items-center justify-between p-24`}
+            className={`flex min-h-screen flex-col items-center justify-between p-4`}
         >
-            <Input
-                type="file"
-                inputRef={fileInputRef}
-                onChange={handleFileChange}
-                // accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
-            />
+            <div className="flex justify-between w-100">
+                <div>
+                    <InputLabel>데이터 파일</InputLabel>
+                    <Input
+                        type="file"
+                        inputRef={fileInputRef}
+                        onChange={handleFileChange}
+                        // accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                    />
+                </div>
+                <div>
+                    <InputLabel>생성 그룹 수</InputLabel>
+                    <Input
+                        type="number"
+                        value={groupCount}
+                        onChange={(e) => setGroupCount(Number(e.target.value))}
+                    />
+                </div>
+                <Button onClick={generateGroupListCase}>Generate</Button>
+                <Button
+                    onClick={() =>
+                        setVisibleGroupCaseListCount((prev) => prev + 5)
+                    }
+                >
+                    결과 더보기
+                </Button>
+                <Button onClick={clearFileInput}>Clear</Button>
+            </div>
             <div>
                 {isLoading ? (
                     <CircularProgress />
@@ -211,13 +235,6 @@ export default function Home() {
                     />
                 )}
             </div>
-            <Button onClick={clearFileInput}>Clear</Button>
-            <Button onClick={generateGroupListCase}>Generate</Button>
-            <Button
-                onClick={() => setVisibleGroupCaseListCount((prev) => prev + 5)}
-            >
-                결과 더보기
-            </Button>
         </main>
     );
 }
