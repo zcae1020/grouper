@@ -1,5 +1,7 @@
 import { read, utils } from "xlsx";
 
+import { getStandardDeviation } from "../common";
+
 import type { Human, HumanWithGroup, SheetRowData } from ".";
 
 const TARGET_SHEET_NAME = "target";
@@ -211,11 +213,8 @@ export const getScoreOfGroupListCase = ({
         });
     });
 
-    const previousParticipationScoreStandardDeviation = Math.sqrt(
-        previousParticipationScorePerGroup.reduce(
-            (acc, cur) => acc + Math.pow(cur, 2),
-            0
-        ) / previousParticipationScorePerGroup.length
+    const previousParticipationScoreStandardDeviation = getStandardDeviation(
+        previousParticipationScorePerGroup
     );
 
     return {
