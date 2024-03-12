@@ -192,7 +192,7 @@ export default function Home() {
         <main
             className={`flex min-h-screen flex-col items-center justify-between p-4`}
         >
-            <div className="flex justify-between w-100">
+            <div className="flex justify-between" style={{ width: "100%" }}>
                 <div>
                     <InputLabel>데이터 파일</InputLabel>
                     <Input
