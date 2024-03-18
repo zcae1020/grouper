@@ -27,3 +27,9 @@ export type ExtractedData = {
     }[];
     targetData: Human[];
 };
+
+export interface ScoreData {
+    score: number;
+    matchScore: number;
+    previousParticipationScore: number;
+}

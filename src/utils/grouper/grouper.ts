@@ -2,7 +2,13 @@ import { read, utils } from "xlsx";
 
 import { getStandardDeviation } from "../common";
 
-import type { Human, HumanWithGroup, SheetRowData } from ".";
+import type {
+    ExtractedData,
+    Human,
+    HumanWithGroup,
+    ScoreData,
+    SheetRowData,
+} from ".";
 
 const TARGET_SHEET_NAME = "target";
 
@@ -186,7 +192,7 @@ export const getScoreOfGroupListCase = ({
     previousParticipationCounts: Awaited<
         ReturnType<typeof getPreviousParticipationCounts>
     >;
-}) => {
+}): ScoreData => {
     let matchScore = 0;
     // 표준편차
     let previousParticipationScorePerGroup = Array.from({
@@ -222,4 +228,17 @@ export const getScoreOfGroupListCase = ({
         matchScore,
         previousParticipationScore: previousParticipationScoreStandardDeviation,
     };
+};
+
+export const getGroupCaseWithScore = ({
+    visited,
+    extractedData,
+}: {
+    visited: Record<string, boolean>;
+    extractedData: ExtractedData;
+}): {
+    scoreData: ScoreData;
+    groupListCase: string[][];
+} | null => {
+    return null;
 };

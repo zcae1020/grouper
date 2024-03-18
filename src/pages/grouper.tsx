@@ -12,7 +12,8 @@ import {
 import GroupList from "@/components/GroupList";
 
 import type { Human } from "@/utils/grouper";
-import styled from "@emotion/styled";
+
+const CASE_COUNT = 100;
 
 /**
  * @see
@@ -21,7 +22,6 @@ import styled from "@emotion/styled";
  * 3. 성별
  * 4. 모임 경력 균등하게 하기
  */
-
 export default function Home() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,9 +57,7 @@ export default function Home() {
     const [visibleGroupCaseListCount, setVisibleGroupCaseListCount] =
         useState<number>(5);
 
-    const [visitedGroupCaseList, setVisitedGroupCaseList] = useState<
-        Record<string, boolean>
-    >({});
+    const visitedGroupCaseList = useRef<Record<string, boolean>>({});
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -90,17 +88,17 @@ export default function Home() {
             }, {})
         );
 
-        const previousParticipationCounts = getPreviousParticipationCounts({
-            extractedData,
-        });
+        setPreviousParticipationCounts(
+            getPreviousParticipationCounts({
+                extractedData,
+            })
+        );
 
-        setPreviousParticipationCounts(previousParticipationCounts);
-
-        const matchCountByParticipation = getMatchCountByParticipation({
-            extractedData,
-        });
-
-        setMatchCountByParticipation(matchCountByParticipation);
+        setMatchCountByParticipation(
+            getMatchCountByParticipation({
+                extractedData,
+            })
+        );
     };
 
     const generateGroupListCase = () => {
@@ -122,7 +120,7 @@ export default function Home() {
             return acc;
         }, {});
 
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < CASE_COUNT; i++) {
             const randomGroupListCasePerGender = Object.values(
                 groupByGender
             ).map((group) =>
@@ -159,14 +157,11 @@ export default function Home() {
                 previousParticipationCounts,
             });
 
-            if (visitedGroupCaseList[JSON.stringify(groupListCase)]) {
+            if (visitedGroupCaseList.current[JSON.stringify(groupListCase)]) {
                 continue;
             }
 
-            setVisitedGroupCaseList((prev) => ({
-                ...prev,
-                [JSON.stringify(groupListCase)]: true,
-            }));
+            visitedGroupCaseList.current[JSON.stringify(groupListCase)] = true;
 
             setGroupCaseList((prev) =>
                 [
