@@ -11,7 +11,7 @@ import {
 } from "@/utils/grouper";
 import GroupList from "@/components/GroupList";
 
-import type { Human } from "@/utils/grouper";
+import type { Human, TargetHumanInfo } from "@/utils/grouper";
 
 const CASE_COUNT = 100;
 
@@ -31,14 +31,24 @@ export default function Home() {
     > | null>(null);
 
     const [targetData, setTargetData] = useState<{
-        [key: Human["id"]]: Human;
+        [key: Human["id"]]: TargetHumanInfo;
     } | null>(null);
 
-    // 지난기간동안의 참여자별 참여 횟수
+    // 최근 3번의 그룹에서의 다른 참가자와의 매칭 횟수
+    const [matchCountByParticipation, setMatchCountByParticipation] = useState<
+        Record<
+            Human["id"],
+            {
+                [key: Human["id"]]: number;
+            }
+        >[]
+    >([]);
+
+    // 지난기간동안의 참여자별 참여 횟수(for 자료구조)
     const [previousParticipationCounts, setPreviousParticipationCounts] =
         useState<Record<Human["id"], number>>({});
 
-    // 그룹 케이스 리스트
+    // 그룹 케이스 리스트(for output)
     const [groupCaseList, setGroupCaseList] = useState<
         | {
               scoreData: {
@@ -51,25 +61,15 @@ export default function Home() {
         | null
     >(null);
 
-    // 케이스당 그룹 수
+    // 케이스당 그룹 수(for input)
     const [groupCount, setGroupCount] = useState<number>(5);
 
     const [visibleGroupCaseListCount, setVisibleGroupCaseListCount] =
         useState<number>(5);
 
-    const visitedGroupCaseList = useRef<Record<string, boolean>>({});
-
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // 최근 3번의 그룹에서의 다른 참가자와의 매칭 횟수
-    const [matchCountByParticipation, setMatchCountByParticipation] = useState<
-        Record<
-            Human["id"],
-            {
-                [key: Human["id"]]: number;
-            }
-        >[]
-    >([]);
+    const visitedGroupCaseList = useRef<Record<string, boolean>>({});
 
     const handleFileChange = async (
         event: React.ChangeEvent<HTMLInputElement>
@@ -81,7 +81,7 @@ export default function Home() {
         setExtractedData(extractedData);
         setTargetData(
             extractedData.targetData.reduce<{
-                [key: Human["id"]]: Human;
+                [key: Human["id"]]: TargetHumanInfo;
             }>((acc, cur) => {
                 acc[cur.id] = cur;
                 return acc;
@@ -151,17 +151,18 @@ export default function Home() {
                 a.join(".").localeCompare(b.join("."))
             );
 
-            const scoreData = getScoreOfGroupListCase({
-                groupListCase,
-                matchCountByParticipation,
-                previousParticipationCounts,
-            });
-
             if (visitedGroupCaseList.current[JSON.stringify(groupListCase)]) {
                 continue;
             }
 
             visitedGroupCaseList.current[JSON.stringify(groupListCase)] = true;
+
+            const scoreData = getScoreOfGroupListCase({
+                groupListCase,
+                targetData: extractedData.targetData,
+                matchCountByParticipation,
+                previousParticipationCounts,
+            });
 
             setGroupCaseList((prev) =>
                 [

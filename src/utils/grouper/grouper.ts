@@ -3,12 +3,26 @@ import { read, utils } from "xlsx";
 import { getStandardDeviation } from "../common";
 
 import type {
+    DayList,
     ExtractedData,
     Human,
     HumanWithGroup,
+    ResolvedDayList,
     ScoreData,
     SheetRowData,
+    TargetHumanInfo,
 } from ".";
+
+const DAY_LIST = {
+    DAY1: "day1",
+    DAY2: "day2",
+    DAY3: "day3",
+    DAY4: "day4",
+};
+
+const DAY_LIST_VALUES = Object.values(DAY_LIST);
+
+const YES_ALIASES = ["Y", "y", "YES", "yes", "O", "o", "예", "ㅇ", "네"];
 
 const TARGET_SHEET_NAME = "target";
 
@@ -31,7 +45,7 @@ export const extractFileData = async (file: File | undefined) => {
 
     let targetCount = 0;
 
-    let targetData: Human[] = [];
+    let targetData: TargetHumanInfo[] = [];
 
     const sheetData: {
         sheetName: string;
@@ -46,7 +60,25 @@ export const extractFileData = async (file: File | undefined) => {
 
         if (sheetName === TARGET_SHEET_NAME) {
             targetCount++;
-            targetData = trimedData;
+            targetData = trimedData.map<TargetHumanInfo>(
+                ({ id, name, gender, ...dayList }) => {
+                    const newDayList: ResolvedDayList = {
+                        day1: false,
+                        day2: false,
+                        day3: false,
+                        day4: false,
+                    };
+
+                    DAY_LIST_VALUES.forEach((key) => {
+                        const dayListKey = key as keyof DayList;
+                        newDayList[dayListKey] = YES_ALIASES.includes(
+                            dayList[dayListKey] ?? ""
+                        );
+                    });
+
+                    return { id, name, gender, ...newDayList };
+                }
+            );
             continue;
         }
 
@@ -181,10 +213,12 @@ export const getRandomGroupListCase = ({
 };
 
 export const getScoreOfGroupListCase = ({
+    targetData,
     groupListCase,
     matchCountByParticipation,
     previousParticipationCounts,
 }: {
+    targetData: TargetHumanInfo[];
     groupListCase: Human["id"][][];
     matchCountByParticipation: Awaited<
         ReturnType<typeof getMatchCountByParticipation>
