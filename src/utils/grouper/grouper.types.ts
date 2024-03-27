@@ -45,7 +45,7 @@ export type ExtractedData = {
 };
 
 export interface ScoreData {
-    score: number;
     matchScore: number;
     previousParticipationScore: number;
+    attendanceScore: number;
 }

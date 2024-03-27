@@ -11,7 +11,7 @@ import {
 } from "@/utils/grouper";
 import GroupList from "@/components/GroupList";
 
-import type { Human, TargetHumanInfo } from "@/utils/grouper";
+import type { Human, ScoreData, TargetHumanInfo } from "@/utils/grouper";
 
 const CASE_COUNT = 100;
 
@@ -51,11 +51,7 @@ export default function Home() {
     // 그룹 케이스 리스트(for output)
     const [groupCaseList, setGroupCaseList] = useState<
         | {
-              scoreData: {
-                  score: number;
-                  matchScore: number;
-                  previousParticipationScore: number;
-              };
+              scoreData: ScoreData;
               groupListCase: ReturnType<typeof getRandomGroupListCase>;
           }[]
         | null
@@ -159,10 +155,14 @@ export default function Home() {
 
             const scoreData = getScoreOfGroupListCase({
                 groupListCase,
-                targetData: extractedData.targetData,
+                targetData: targetData ?? {},
                 matchCountByParticipation,
                 previousParticipationCounts,
             });
+
+            if (!scoreData) {
+                continue;
+            }
 
             setGroupCaseList((prev) =>
                 [
@@ -171,7 +171,31 @@ export default function Home() {
                         scoreData,
                         groupListCase,
                     },
-                ].sort((a, b) => a.scoreData.score - b.scoreData.score)
+                ].sort((a, b) => {
+                    if (
+                        a.scoreData.attendanceScore ===
+                        b.scoreData.attendanceScore
+                    ) {
+                        if (
+                            a.scoreData.previousParticipationScore ===
+                            b.scoreData.previousParticipationScore
+                        ) {
+                            return (
+                                a.scoreData.matchScore - b.scoreData.matchScore
+                            );
+                        }
+
+                        return (
+                            a.scoreData.previousParticipationScore -
+                            b.scoreData.previousParticipationScore
+                        );
+                    }
+
+                    return (
+                        a.scoreData.attendanceScore -
+                        b.scoreData.attendanceScore
+                    );
+                })
             );
         }
 

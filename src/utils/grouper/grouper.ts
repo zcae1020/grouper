@@ -22,9 +22,13 @@ const DAY_LIST = {
 
 const DAY_LIST_VALUES = Object.values(DAY_LIST);
 
+type DayListValue = "day1" | "day2" | "day3" | "day4";
+
 const YES_ALIASES = ["Y", "y", "YES", "yes", "O", "o", "예", "ㅇ", "네"];
 
 const TARGET_SHEET_NAME = "target";
+
+const ATTDENDANCE_SCORE_THRESHOLD = 1;
 
 const trimSheetData = (sheetData: SheetRowData[]) => {
     return sheetData.map((row) => {
@@ -218,7 +222,7 @@ export const getScoreOfGroupListCase = ({
     matchCountByParticipation,
     previousParticipationCounts,
 }: {
-    targetData: TargetHumanInfo[];
+    targetData: Record<Human["id"], TargetHumanInfo>;
     groupListCase: Human["id"][][];
     matchCountByParticipation: Awaited<
         ReturnType<typeof getMatchCountByParticipation>
@@ -226,12 +230,38 @@ export const getScoreOfGroupListCase = ({
     previousParticipationCounts: Awaited<
         ReturnType<typeof getPreviousParticipationCounts>
     >;
-}): ScoreData => {
+}): ScoreData | null => {
     let matchScore = 0;
-    // 표준편차
     let previousParticipationScorePerGroup = Array.from({
         length: groupListCase.length,
     }).map(() => 0);
+
+    const attendanceCountPerGroup = (DAY_LIST_VALUES as DayListValue[]).map(
+        (day) =>
+            groupListCase.map((group) =>
+                group.reduce((acc, id) => {
+                    return acc + (targetData[id][day] ? 1 : 0);
+                }, 0)
+            )
+    );
+
+    const attendanceCountPerGroupStandardDeviation =
+        attendanceCountPerGroup.map((attendanceCount) =>
+            getStandardDeviation(attendanceCount)
+        );
+
+    const attendanceCountPerGroupStandardDeviationAverage =
+        attendanceCountPerGroupStandardDeviation.reduce(
+            (acc, value) => acc + value,
+            0
+        ) / attendanceCountPerGroupStandardDeviation.length;
+
+    if (
+        attendanceCountPerGroupStandardDeviationAverage >
+        ATTDENDANCE_SCORE_THRESHOLD
+    ) {
+        return null;
+    }
 
     groupListCase.forEach((group, index) => {
         group.forEach((id, i) => {
@@ -258,12 +288,13 @@ export const getScoreOfGroupListCase = ({
     );
 
     return {
-        score: matchScore - previousParticipationScoreStandardDeviation,
         matchScore,
         previousParticipationScore: previousParticipationScoreStandardDeviation,
+        attendanceScore: attendanceCountPerGroupStandardDeviationAverage,
     };
 };
 
+// TODO: 비동기 함수로 변경
 export const getGroupCaseWithScore = ({
     visited,
     extractedData,

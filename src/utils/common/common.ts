@@ -6,3 +6,9 @@ export const getStandardDeviation = (arr: number[]) => {
             arr.length
     );
 };
+
+export const roundWithPrecision = (num: number, precision: number) => {
+    const multiplier = Math.pow(10, precision);
+
+    return Math.round(num * multiplier) / multiplier;
+};
