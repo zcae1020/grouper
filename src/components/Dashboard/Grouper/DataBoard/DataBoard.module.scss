@@ -1,0 +1,24 @@
+.wrapper {
+    display: flex;
+    justify-content: center;
+    max-height: 80vh;
+    overflow: auto;
+    gap: 1rem;
+    width: 100%;
+}
+
+.targetTable {
+    flex: 1;
+    height: fit-content;
+}
+
+.iconButton {
+    position: sticky;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.icon {
+    height: 6.25rem;
+    width: 6.25rem;
+}

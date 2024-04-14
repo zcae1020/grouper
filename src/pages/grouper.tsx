@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 
-import { Button, CircularProgress, Input, InputLabel } from "@mui/material";
+import { Button, Input, InputLabel } from "@mui/material";
 
 import {
     extractFileData,
@@ -11,7 +11,13 @@ import {
 } from "@/utils/grouper";
 import GroupList from "@/components/GroupList";
 
-import type { Human, ScoreData, TargetHumanInfo } from "@/utils/grouper";
+import type {
+    Human,
+    ScoreData,
+    TargetHumanInfoWithSetting,
+} from "@/utils/grouper";
+import TargetTable from "@/components/TargetTable";
+import DataBoard from "@/components/Dashboard/Grouper/DataBoard";
 
 const CASE_COUNT = 100;
 
@@ -29,10 +35,6 @@ export default function Home() {
     const [extractedData, setExtractedData] = useState<Awaited<
         ReturnType<typeof extractFileData>
     > | null>(null);
-
-    const [targetData, setTargetData] = useState<{
-        [key: Human["id"]]: TargetHumanInfo;
-    } | null>(null);
 
     // 최근 3번의 그룹에서의 다른 참가자와의 매칭 횟수
     const [matchCountByParticipation, setMatchCountByParticipation] = useState<
@@ -65,6 +67,17 @@ export default function Home() {
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const groupedTargetData = useMemo(
+        () =>
+            extractedData?.targetData.reduce<{
+                [key: Human["id"]]: TargetHumanInfoWithSetting;
+            }>((acc, cur) => {
+                acc[cur.id] = cur;
+                return acc;
+            }, {}),
+        [extractedData]
+    );
+
     const visitedGroupCaseList = useRef<Record<string, boolean>>({});
 
     const handleFileChange = async (
@@ -75,14 +88,6 @@ export default function Home() {
         const extractedData = await extractFileData(file);
 
         setExtractedData(extractedData);
-        setTargetData(
-            extractedData.targetData.reduce<{
-                [key: Human["id"]]: TargetHumanInfo;
-            }>((acc, cur) => {
-                acc[cur.id] = cur;
-                return acc;
-            }, {})
-        );
 
         setPreviousParticipationCounts(
             getPreviousParticipationCounts({
@@ -155,7 +160,7 @@ export default function Home() {
 
             const scoreData = getScoreOfGroupListCase({
                 groupListCase,
-                targetData: targetData ?? {},
+                targetData: groupedTargetData ?? {},
                 matchCountByParticipation,
                 previousParticipationCounts,
             });
@@ -209,10 +214,8 @@ export default function Home() {
     };
 
     return (
-        <main
-            className={`flex min-h-screen flex-col items-center justify-between p-4`}
-        >
-            <div className="flex justify-between" style={{ width: "100%" }}>
+        <main className={`flex min-h-screen flex-col items-center p-4 gap-10`}>
+            <div className="flex gap-5" style={{ width: "100%" }}>
                 <div>
                     <InputLabel>데이터 파일</InputLabel>
                     <Input
@@ -230,7 +233,7 @@ export default function Home() {
                         onChange={(e) => setGroupCount(Number(e.target.value))}
                     />
                 </div>
-                <Button onClick={generateGroupListCase}>Generate</Button>
+                {/* <Button onClick={generateGroupListCase}>Generate</Button>
                 <Button
                     onClick={() =>
                         setVisibleGroupCaseListCount((prev) => prev + 5)
@@ -238,23 +241,31 @@ export default function Home() {
                 >
                     결과 더보기
                 </Button>
-                <Button onClick={clearFileInput}>Clear</Button>
+                <Button onClick={clearFileInput}>Clear</Button> */}
             </div>
-            <div>
-                {isLoading ? (
-                    <CircularProgress />
-                ) : (
-                    <GroupList
-                        targetData={targetData ?? {}}
-                        groupCaseList={
-                            groupCaseList?.slice(
-                                0,
-                                visibleGroupCaseListCount
-                            ) ?? []
-                        }
-                    />
-                )}
-            </div>
+            <DataBoard
+                targetTableProps={{
+                    targetData: extractedData?.targetData ?? [],
+                    groupCount,
+                    onTargetChange: (targetData) =>
+                        setExtractedData((prev) => {
+                            if (!prev) {
+                                return prev;
+                            }
+
+                            return {
+                                ...prev,
+                                targetData,
+                            };
+                        }),
+                }}
+                groupListProps={{
+                    targetData: groupedTargetData ?? {},
+                    groupCaseList: groupCaseList ?? [],
+                }}
+                isDataReady={!!extractedData}
+                onGenerateGroup={generateGroupListCase}
+            />
         </main>
     );
 }

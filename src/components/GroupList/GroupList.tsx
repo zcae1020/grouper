@@ -1,11 +1,17 @@
+import cn from "classnames";
+
 import style from "./GroupList.module.scss";
 import Group from "./Group";
 
 import type { GroupListProps } from "./GroupList.types";
 
-const GroupList = ({ groupCaseList, targetData }: GroupListProps) => {
+const GroupList = ({
+    groupCaseList,
+    targetData,
+    className,
+}: GroupListProps) => {
     return (
-        <div className={style.wrapper}>
+        <div className={cn(className, style.wrapper)}>
             {groupCaseList.map((groupCase, index) => (
                 <Group
                     key={index}

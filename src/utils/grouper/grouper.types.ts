@@ -29,6 +29,15 @@ export type HumanWithGroup = Merge<
 
 export type TargetHumanInfo = Merge<Human, ResolvedDayList>;
 
+export type TargetHumanSetting = {
+    group?: string;
+};
+
+export type TargetHumanInfoWithSetting = Merge<
+    TargetHumanInfo,
+    TargetHumanSetting
+>;
+
 export type SheetRowData = Merge<
     HumanWithGroup,
     {
@@ -41,7 +50,7 @@ export type ExtractedData = {
         sheetName: string;
         data: HumanWithGroup[];
     }[];
-    targetData: TargetHumanInfo[];
+    targetData: TargetHumanInfoWithSetting[];
 };
 
 export interface ScoreData {

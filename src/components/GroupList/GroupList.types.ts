@@ -11,4 +11,5 @@ export interface GroupListProps {
         groupListCase: ReturnType<typeof getRandomGroupListCase>;
     }[];
     targetData: { [key: Human["id"]]: TargetHumanInfo };
+    className?: string;
 }
