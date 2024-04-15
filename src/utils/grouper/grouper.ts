@@ -11,6 +11,7 @@ import type {
     ScoreData,
     SheetRowData,
     TargetHumanInfo,
+    TargetHumanInfoWithSetting,
 } from ".";
 
 const DAY_LIST = {
@@ -49,7 +50,7 @@ export const extractFileData = async (file: File | undefined) => {
 
     let targetCount = 0;
 
-    let targetData: TargetHumanInfo[] = [];
+    let targetData: TargetHumanInfoWithSetting[] = [];
 
     const sheetData: {
         sheetName: string;
@@ -62,9 +63,20 @@ export const extractFileData = async (file: File | undefined) => {
 
         const trimedData = trimSheetData(data);
 
+        const idSet = new Set<string>();
+
+        for (const row of trimedData) {
+            if (idSet.has(row.id)) {
+                console.log(sheetName, idSet, row.id);
+                throw new Error("중복된 id가 존재합니다.");
+            }
+
+            idSet.add(row.id);
+        }
+
         if (sheetName === TARGET_SHEET_NAME) {
             targetCount++;
-            targetData = trimedData.map<TargetHumanInfo>(
+            targetData = trimedData.map<TargetHumanInfoWithSetting>(
                 ({ id, name, gender, ...dayList }) => {
                     const newDayList: ResolvedDayList = {
                         day1: false,
@@ -193,27 +205,65 @@ export const getMatchCountByParticipation = ({
     return ret;
 };
 
+/**
+ *
+ * @param obj
+ * @property idList - 그룹을 나눌 대상(group이 없는 대상)]
+ * @property groupCount - 나눌 그룹 수
+ * @property allTargetCount - 전체 대상 수
+ * @property prefixGroupList - 각 그룹별로 미리 할당된 대상 리스트
+ *
+ * @returns
+ */
 export const getRandomGroupListCase = ({
     idList,
     groupCount,
+    allTargetCount,
+    prefixGroupList,
 }: {
     idList: Human["id"][];
+    prefixGroupList: Human["id"][][];
     groupCount: number;
+    allTargetCount: number;
 }): Human["id"][][] => {
-    const targetLength = Math.ceil(idList.length / groupCount);
-    groupCount--;
+    const targetLength = Math.floor(allTargetCount / groupCount);
 
-    const randomList: Human["id"][] = [];
+    const randomGroupListCase = [];
 
-    for (let i = 0; i < targetLength; i++) {
-        const randomIndex = Math.floor(Math.random() * idList.length);
-        randomList.push(idList[randomIndex]);
-        idList.splice(randomIndex, 1);
+    let ceilCount = 0;
+
+    for (let i = 0; i < groupCount; i++) {
+        const randomList: Human["id"][] = [];
+        for (
+            let j = 0;
+            j < targetLength - (prefixGroupList?.[i]?.length ?? 0);
+            j++
+        ) {
+            const randomIndex = Math.floor(Math.random() * idList.length);
+            randomList.push(idList[randomIndex]);
+            idList.splice(randomIndex, 1);
+        }
+
+        const newList = [...randomList, ...(prefixGroupList?.[i] ?? [])];
+
+        // 랜덤으로 추가할 인원이 남은 경우 그룹 길이 ceil 연산한만큼으로 설정
+        if (
+            groupCount - i === (allTargetCount % groupCount) - ceilCount ||
+            (allTargetCount % groupCount > ceilCount &&
+                Math.floor(Math.random() * 2))
+        ) {
+            ceilCount++;
+            const randomIndex = Math.floor(Math.random() * idList.length);
+            newList.push(idList[randomIndex]);
+            idList.splice(randomIndex, 1);
+        }
+
+        newList.sort();
+
+        randomGroupListCase.push(newList);
     }
 
-    return groupCount === 0
-        ? [randomList]
-        : [randomList, ...getRandomGroupListCase({ idList, groupCount })];
+    return randomGroupListCase;
 };
 
 export const getScoreOfGroupListCase = ({

@@ -10,6 +10,8 @@
 .targetTable {
     flex: 1;
     height: fit-content;
+    overflow: auto;
+    min-width: 40.625rem;
 }
 
 .iconButton {

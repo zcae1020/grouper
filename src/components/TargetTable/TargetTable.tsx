@@ -30,6 +30,7 @@ const TargetTable = ({
             <Table sx={{ minWidth: 650 }} aria-label="simple table">
                 <TableHead>
                     <TableRow>
+                        <TableCell>index</TableCell>
                         <TableCell>id</TableCell>
                         <TableCell align="right">name</TableCell>
                         <TableCell align="right">gender</TableCell>
@@ -41,7 +42,7 @@ const TargetTable = ({
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {targetData.map((target) => (
+                    {targetData.map((target, index) => (
                         <TableRow
                             key={target.id}
                             sx={{
@@ -50,6 +51,9 @@ const TargetTable = ({
                                 },
                             }}
                         >
+                            <TableCell component="th" scope="row">
+                                {index + 1}
+                            </TableCell>
                             <TableCell component="th" scope="row">
                                 {target.id}
                             </TableCell>

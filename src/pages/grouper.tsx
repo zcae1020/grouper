@@ -84,8 +84,17 @@ export default function Home() {
         event: React.ChangeEvent<HTMLInputElement>
     ) => {
         const file = event.target.files?.[0]; // Get the selected file
+        let extractedData: Awaited<ReturnType<typeof extractFileData>>;
 
-        const extractedData = await extractFileData(file);
+        try {
+            extractedData = await extractFileData(file);
+        } catch (e: any) {
+            console.error(e);
+            alert(
+                e.message ? e.message : "파일을 읽는 중 오류가 발생했습니다."
+            );
+            return;
+        }
 
         setExtractedData(extractedData);
 
@@ -107,45 +116,55 @@ export default function Home() {
             return;
         }
 
-        setIsLoading(true);
-
         // TODO: 비동기로 수정
-        const groupByGender = extractedData.targetData.reduce<{
-            [key: string]: Human[];
-        }>((acc, cur) => {
-            if (acc[cur.gender]) {
-                acc[cur.gender].push(cur);
-            } else {
-                acc[cur.gender] = [cur];
+        // 그룹을 가진 데이터를 그룹별로 나누기
+        const targetDataGroupedByGroup: TargetHumanInfoWithSetting[][] = [];
+
+        extractedData.targetData.map((target) => {
+            if (target.group) {
+                const group = Number(target.group) - 1;
+
+                if (targetDataGroupedByGroup[Number(group)]) {
+                    targetDataGroupedByGroup[Number(group)].push(target);
+                } else {
+                    targetDataGroupedByGroup[Number(group)] = [target];
+                }
             }
-            return acc;
-        }, {});
+        });
+
+        const prefixGroupCountList = targetDataGroupedByGroup.map(
+            (group) => group.length
+        );
+
+        const maxParticipantCountPerGroup = Math.ceil(
+            extractedData.targetData.length / groupCount
+        );
+        if (
+            prefixGroupCountList.reduce(
+                (acc, cur) => acc + (cur > maxParticipantCountPerGroup ? 1 : 0),
+                0
+            ) >
+            extractedData.targetData.length % groupCount
+        ) {
+            alert("한 그룹에 최대로 들어갈 수 있는 인원수를 초과했습니다.");
+            return;
+            // throw new Error(
+            //     "한 그룹에 최대로 들어갈 수 있는 인원수를 초과했습니다."
+            // );
+        }
+
+        const hasNoGroupTargetData = extractedData.targetData.filter(
+            (target) => target.group === undefined
+        );
 
         for (let i = 0; i < CASE_COUNT; i++) {
-            const randomGroupListCasePerGender = Object.values(
-                groupByGender
-            ).map((group) =>
-                getRandomGroupListCase({
-                    idList: group.map((v) => v.id),
-                    groupCount,
-                })
-            );
-
-            if (randomGroupListCasePerGender.length !== 2) {
-                throw new Error("성별이 2가지가 아닙니다.");
-            }
-
-            const groupListCase: Human["id"][][] = [];
-
-            Array.from({ length: groupCount }).forEach((_, index) => {
-                groupListCase.push(
-                    [
-                        ...randomGroupListCasePerGender[0][index],
-                        ...randomGroupListCasePerGender[1][
-                            groupCount - index - 1
-                        ],
-                    ].sort()
-                );
+            const groupListCase: Human["id"][][] = getRandomGroupListCase({
+                allTargetCount: extractedData.targetData.length,
+                idList: hasNoGroupTargetData.map((target) => target.id),
+                prefixGroupList: targetDataGroupedByGroup.map((group) =>
+                    group.map((target) => target.id)
+                ),
+                groupCount,
             });
 
             groupListCase.sort((a, b) =>
@@ -203,8 +222,6 @@ export default function Home() {
                 })
             );
         }
-
-        setIsLoading(false);
     };
 
     const clearFileInput = () => {
