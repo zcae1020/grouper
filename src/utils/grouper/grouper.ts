@@ -337,10 +337,29 @@ export const getScoreOfGroupListCase = ({
         previousParticipationScorePerGroup
     );
 
+    const genderDifferenceScorePerGroup = groupListCase.map((group) => {
+        const maleCount = group.reduce(
+            (acc, id) => acc + (targetData[id].gender === "남" ? 1 : 0),
+            0
+        );
+
+        const femaleCount = group.reduce(
+            (acc, id) => acc + (targetData[id].gender === "여" ? 1 : 0),
+            0
+        );
+
+        return Math.abs(maleCount - femaleCount);
+    });
+
+    const genderDifferenceScoreStandardDeviation = getStandardDeviation(
+        genderDifferenceScorePerGroup
+    );
+
     return {
         matchScore,
         previousParticipationScore: previousParticipationScoreStandardDeviation,
         attendanceScore: attendanceCountPerGroupStandardDeviationAverage,
+        genderRatioScore: genderDifferenceScoreStandardDeviation,
     };
 };
 

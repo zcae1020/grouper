@@ -22,6 +22,10 @@ const Group = ({ groupListCase, targetData, index, scoreData }: GroupProps) => {
                             3
                         )}
                     </div>
+                    <div>
+                        성비 표준편차:{" "}
+                        {roundWithPrecision(scoreData.genderRatioScore, 3)}
+                    </div>
                     <div>매칭점수: {scoreData.matchScore}</div>
                 </div>
             </div>

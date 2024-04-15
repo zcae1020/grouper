@@ -57,4 +57,5 @@ export interface ScoreData {
     matchScore: number;
     previousParticipationScore: number;
     attendanceScore: number;
+    genderRatioScore: number;
 }

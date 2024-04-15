@@ -204,8 +204,19 @@ export default function Home() {
                             a.scoreData.previousParticipationScore ===
                             b.scoreData.previousParticipationScore
                         ) {
+                            if (
+                                a.scoreData.genderRatioScore ===
+                                b.scoreData.genderRatioScore
+                            ) {
+                                return (
+                                    a.scoreData.matchScore -
+                                    b.scoreData.matchScore
+                                );
+                            }
+
                             return (
-                                a.scoreData.matchScore - b.scoreData.matchScore
+                                a.scoreData.genderRatioScore -
+                                b.scoreData.genderRatioScore
                             );
                         }
 
