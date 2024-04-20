@@ -30,6 +30,7 @@ const YES_ALIASES = ["Y", "y", "YES", "yes", "O", "o", "예", "ㅇ", "네"];
 const TARGET_SHEET_NAME = "target";
 
 const ATTDENDANCE_SCORE_THRESHOLD = 1;
+const GENDER_RATIO_SCORE_THRESHOLD = 0.5;
 
 const trimSheetData = (sheetData: SheetRowData[]) => {
     return sheetData.map((row) => {
@@ -313,6 +314,28 @@ export const getScoreOfGroupListCase = ({
         return null;
     }
 
+    const genderDifferenceScorePerGroup = groupListCase.map((group) => {
+        const maleCount = group.reduce(
+            (acc, id) => acc + (targetData[id].gender === "남" ? 1 : 0),
+            0
+        );
+
+        const femaleCount = group.reduce(
+            (acc, id) => acc + (targetData[id].gender === "여" ? 1 : 0),
+            0
+        );
+
+        return Math.abs(maleCount - femaleCount);
+    });
+
+    const genderDifferenceScoreStandardDeviation = getStandardDeviation(
+        genderDifferenceScorePerGroup
+    );
+
+    if (genderDifferenceScoreStandardDeviation > GENDER_RATIO_SCORE_THRESHOLD) {
+        return null;
+    }
+
     groupListCase.forEach((group, index) => {
         group.forEach((id, i) => {
             group.forEach((id2, j) => {
@@ -335,24 +358,6 @@ export const getScoreOfGroupListCase = ({
 
     const previousParticipationScoreStandardDeviation = getStandardDeviation(
         previousParticipationScorePerGroup
-    );
-
-    const genderDifferenceScorePerGroup = groupListCase.map((group) => {
-        const maleCount = group.reduce(
-            (acc, id) => acc + (targetData[id].gender === "남" ? 1 : 0),
-            0
-        );
-
-        const femaleCount = group.reduce(
-            (acc, id) => acc + (targetData[id].gender === "여" ? 1 : 0),
-            0
-        );
-
-        return Math.abs(maleCount - femaleCount);
-    });
-
-    const genderDifferenceScoreStandardDeviation = getStandardDeviation(
-        genderDifferenceScorePerGroup
     );
 
     return {
